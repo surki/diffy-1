@@ -48,7 +48,7 @@ case class ThriftDifferenceProxy (
       )
     )
 
-  override def serviceFactory(serverset: String, label: String) = {
+  override def serviceFactory(serverset: String, label: String, headers: String) = {
     val client = if (settings.enableThriftMux) {
       ThriftMux.client
         .withClientId(clientId)

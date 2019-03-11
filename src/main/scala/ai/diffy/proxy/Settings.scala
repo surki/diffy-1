@@ -28,4 +28,4 @@ case class Settings(
   httpsPort: String,
   useFramedThriftTransport: Boolean)
 
-case class Target(path: String)
+case class Target(path: String, headers: String)

@@ -46,15 +46,15 @@ trait DifferenceProxy {
   val settings: Settings
   var lastReset: Time = Time.now
 
-  def serviceFactory(serverset: String, label: String): Srv
+  def serviceFactory(serverset: String, label: String, headers: String): Srv
 
   def liftRequest(req: Req): Future[Message]
   def liftResponse(rep: Try[Rep]): Future[Message]
 
   // Clients for services
-  val candidate = serviceFactory(settings.candidate.path, "candidate")
-  val primary   = serviceFactory(settings.primary.path, "primary")
-  val secondary = serviceFactory(settings.secondary.path, "secondary")
+  val candidate = serviceFactory(settings.candidate.path, "candidate", settings.candidate.headers)
+  val primary   = serviceFactory(settings.primary.path, "primary", settings.primary.headers)
+  val secondary = serviceFactory(settings.secondary.path, "secondary", settings.secondary.headers)
 
   val collector: InMemoryDifferenceCollector
 

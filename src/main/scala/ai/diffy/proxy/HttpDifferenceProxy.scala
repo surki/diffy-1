@@ -8,6 +8,7 @@ import ai.diffy.proxy.DifferenceProxy.NoResponseException
 import com.twitter.finagle.http.{Method, Request, Response, Status}
 import com.twitter.finagle.{Filter, Http, Service}
 import com.twitter.util.{Future, Try}
+import com.twitter.logging.Logger
 
 object HttpDifferenceProxy {
   val okResponse = Future.value(Response(Status.Ok))
@@ -33,8 +34,25 @@ trait HttpDifferenceProxy extends DifferenceProxy {
   override type Rep = Response
   override type Srv = HttpService
 
-  override def serviceFactory(serverset: String, label: String) =
-    HttpService(Http.newClient(serverset, label).toService)
+  override def serviceFactory(serverset: String, label: String, headers: String) = {
+    val addHeaderFilter =
+      new Filter[Request, Response, Request, Response] {
+        override def apply(request: Request, service: Service[Request, Response]): Future[Response] = {
+          if (headers != null && !headers.isEmpty) {
+            for ( h <-headers.split(",") ) {
+              val valuePair = h.split(":").map(_.trim)
+              if (valuePair.length == 2) {
+                request.headerMap.set(valuePair(0), valuePair(1))
+              }
+            }
+          }
+
+          service(request)
+        }
+      }
+
+    HttpService(addHeaderFilter andThen Http.newClient(serverset, label).toService)
+  }
 
   override lazy val server =
     Http.serve(
@@ -105,10 +123,24 @@ case class SimpleHttpsDifferenceProxy (
       (!settings.allowHttpSideEffects, httpSideEffectsFilter) andThen
       super.proxy
 
-  override def serviceFactory(serverset: String, label: String) =
-    HttpService(
-      Http.client
-      .withTls(serverset)
-      .newService(serverset+":"+settings.httpsPort, label)
-    )
+  override def serviceFactory(serverset: String, label: String, headers: String) = {
+    val addHeaderFilter =
+      new Filter[Request, Response, Request, Response] {
+        override def apply(request: Request, service: Service[Request, Response]): Future[Response] = {
+          if (headers != null && !headers.isEmpty) {
+            for ( h <-headers.split(",") ) {
+              val valuePair = h.split(":").map(_.trim)
+              if (valuePair.length == 2) {
+                request.headerMap.set(valuePair(0), valuePair(1))
+              }
+            }
+          }
+
+          service(request)
+        }
+      }
+
+    HttpService(addHeaderFilter andThen
+      Http.client.withTls(serverset).newService(serverset + ":" + settings.httpsPort, label))
+  }
 }

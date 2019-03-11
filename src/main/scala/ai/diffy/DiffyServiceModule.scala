@@ -26,6 +26,15 @@ object DiffyServiceModule extends TwitterModule {
   val secondaryPath =
     flag[String]("master.secondary", "secondary master serverset where known good code is deployed")
 
+  val candidateHeaders =
+    flag[String]("candidate.headers", "", "Headers to pass tocandidate server. Ex: key1:value1,key2:value2")
+
+  val primaryHeaders =
+    flag[String]("primary.headers", "", "Headers to pass to primary server. Ex: key1:value1,key2:value2")
+
+  val secondaryHeaders =
+    flag[String]("secondary.headers", "", "Headers to pass to secondary server. Ex: key1:value1,key2:value2")
+
   val protocol =
     flag[String]("service.protocol", "Service protocol: thrift, http or https")
 
@@ -82,9 +91,9 @@ object DiffyServiceModule extends TwitterModule {
     Settings(
       datacenter(),
       servicePort(),
-      Target(candidatePath()),
-      Target(primaryPath()),
-      Target(secondaryPath()),
+      Target(candidatePath(), candidateHeaders()),
+      Target(primaryPath(), primaryHeaders()),
+      Target(secondaryPath(), secondaryHeaders()),
       protocol(),
       clientId(),
       pathToThriftJar(),
